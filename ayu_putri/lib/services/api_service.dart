@@ -7,7 +7,7 @@ class ApiService {
   // gunakan IP address komputer Anda (contoh: 'http://192.168.1.10/project_uas1/php-backend/public')
   // Jika menggunakan localhost di emulator (Android Studio emulator), bisa pakai 10.0.2.2
   // Untuk perangkat fisik atau iOS simulator, gunakan IP lokal komputer Anda
-  static const String baseUrl = 'http://localhost:8000/project_uas1/php-backend/public'; // Sesuaikan IP ini!
+  static const String baseUrl = 'http://localhost:8000'; // Sesuaikan IP ini!
 
   // Ambil data wisata
   Future<List<dynamic>> getWisata() async {
