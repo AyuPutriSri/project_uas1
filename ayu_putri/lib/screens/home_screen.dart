@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchTerm = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // Dummy data
+  // Dummy data (Ini akan ditimpa oleh data API jika fetch berhasil)
   List<Map<String, dynamic>> _dummyWisataList = [
     {
       'id': 1,
@@ -54,8 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Inisialisasi dengan dummy data jika _wisataList kosong,
+    // lalu fetch dari API
     if (_wisataList.isEmpty) {
-      _wisataList = List.from(_dummyWisataList);
+      _wisataList = List.from(_dummyWisataList); // Gunakan dummy untuk tampilan awal
     }
     _fetchWisata();
   }
@@ -68,11 +70,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final data = await apiService.getWisata();
       setState(() {
-        _wisataList = data;
+        _wisataList = data; // Timpa dummy dengan data asli dari API
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Gagal memuat data: ${e.toString()}';
+        // Biarkan dummy data tetap ada jika terjadi error fetch untuk tampilan
       });
     } finally {
       setState(() {
@@ -111,13 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
       if (success) {
-        _fetchWisata();
+        _fetchWisata(); // Memuat ulang data dari API setelah berhasil hapus
       }
     }
   }
 
   // Widget untuk menampilkan halaman Home (daftar wisata) dengan TextField pencarian di dalamnya
-  Widget _buildHomePageContent() { // Ubah nama metode ini
+  Widget _buildHomePageContent() {
     // Filter data berdasarkan _searchTerm
     List<dynamic> filteredWisata = _wisataList.where((wisata) {
       final nama = wisata['nama'].toString().toLowerCase();
@@ -175,18 +178,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => DetailScreen(wisata: wisata, isAdmin: true),
                                     ),
-                                  ).then((_) => _fetchWisata());
+                                  ).then((result) { // Gunakan then untuk menangani hasil pop
+                                    if (result == true) { // Jika kembali dengan true (berhasil hapus/edit)
+                                      _fetchWisata(); // Muat ulang data
+                                    }
+                                  });
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Row(
                                     children: [
+                                      // Gambar di sebelah kiri
                                       wisata['foto'] != null && wisata['foto'] != ''
                                           ? ClipRRect(
                                               borderRadius: BorderRadius.circular(8),
                                               child: Image.network(
                                                 wisata['foto'],
-                                                width: 80,
+                                                width: 80, // Ukuran gambar
                                                 height: 80,
                                                 fit: BoxFit.cover,
                                                 errorBuilder: (context, error, stackTrace) => Container(
@@ -197,13 +205,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                               ),
                                             )
-                                          : Container(
+                                          : Container( // Placeholder jika tidak ada foto
                                               width: 80,
                                               height: 80,
                                               color: Colors.grey[300],
                                               child: const Icon(Icons.image, size: 40),
                                             ),
-                                      const SizedBox(width: 16),
+                                      const SizedBox(width: 16), // Spasi antara gambar dan teks
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,6 +250,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // List halaman untuk BottomNavigationBar
+  // Memanggil _buildHomePageContent() untuk tab Home
+  final List<Widget> _pages = [
+    _HomeScreenContentWrapper(), // Ini akan menjadi konten Home
+    ProfileScreen(), // Ini adalah halaman profil Anda
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -263,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ]
             : null,
       ),
-      body: _selectedIndex == 0 ? _buildHomePageContent() : ProfileScreen(), // Panggil _buildHomePageContent() atau ProfileScreen()
+      body: _pages[_selectedIndex], // Tampilkan halaman berdasarkan _selectedIndex
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               onPressed: () async {
@@ -295,5 +310,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
       ),
     );
+  }
+}
+
+// Wrapper untuk _HomeScreenContent agar bisa mengakses state dari parent
+class _HomeScreenContentWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final _HomeScreenState? parentState = context.findAncestorStateOfType<_HomeScreenState>();
+    return parentState != null ? parentState._buildHomePageContent() : Container();
   }
 }
