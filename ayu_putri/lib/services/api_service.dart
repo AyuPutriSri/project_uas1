@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart'; // Import ini
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000'; // Pastikan ini!
+  static const String baseUrl = 'http://10.0.2.2:8000'; // Pastikan ini!
 
   // Ambil data wisata (Tidak ada perubahan di sini)
   Future<List<dynamic>> getWisata() async {
