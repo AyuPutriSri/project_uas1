@@ -1,20 +1,22 @@
 <?php
-$host = 'localhost';
-$db   = 'db_wisata';
-$user = 'root';
-$pass = '';
-$charset = 'utf8mb4';
+class Database {
+    private $host = "localhost"; // Sesuaikan jika host database berbeda
+    private $db_name = "db_wisata"; // Nama database Anda
+    private $username = "root"; // Username database Anda
+    private $password = ""; // Password database Anda (kosong jika tidak ada)
+    public $conn;
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-];
-
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
-    exit;
+    public function getConnection() {
+        $this->conn = null;
+        try {
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+            $this->conn->exec("set names utf8");
+        } catch(PDOException $exception) {
+            http_response_code(500); // Internal Server Error
+            echo json_encode(array("message" => "Connection error: " . $exception->getMessage()));
+            exit(); // Hentikan eksekusi script
+        }
+        return $this->conn;
+    }
 }
+?>

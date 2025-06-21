@@ -2,132 +2,189 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class AddEditScreen extends StatefulWidget {
-  final Map<String, dynamic>? wisata; // null jika tambah, ada jika edit
+  final Map<String, dynamic>? wisata; // Nullable for add, not-null for edit
 
-  AddEditScreen({this.wisata});
+  const AddEditScreen({Key? key, this.wisata}) : super(key: key);
 
   @override
-  State<AddEditScreen> createState() => _AddEditScreenState();
+  _AddEditScreenState createState() => _AddEditScreenState();
 }
 
 class _AddEditScreenState extends State<AddEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController namaController;
-  late TextEditingController lokasiController;
-  late TextEditingController deskripsiController;
-  late TextEditingController fotoController;
-  late TextEditingController kategoriController;
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _lokasiController = TextEditingController();
+  final TextEditingController _deskripsiController = TextEditingController();
+  final TextEditingController _fotoController = TextEditingController(); // Untuk URL foto
+  final TextEditingController _kategoriController = TextEditingController();
+
+  ApiService apiService = ApiService();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    namaController = TextEditingController(text: widget.wisata?['nama'] ?? '');
-    lokasiController = TextEditingController(
-      text: widget.wisata?['lokasi'] ?? '',
-    );
-    deskripsiController = TextEditingController(
-      text: widget.wisata?['deskripsi'] ?? '',
-    );
-    fotoController = TextEditingController(text: widget.wisata?['foto'] ?? '');
-    kategoriController = TextEditingController(
-      text: widget.wisata?['kategori'] ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    namaController.dispose();
-    lokasiController.dispose();
-    deskripsiController.dispose();
-    fotoController.dispose();
-    kategoriController.dispose();
-    super.dispose();
+    // Jika mode edit, isi data dari widget.wisata
+    if (widget.wisata != null) {
+      _namaController.text = widget.wisata!['nama'] ?? '';
+      _lokasiController.text = widget.wisata!['lokasi'] ?? '';
+      _deskripsiController.text = widget.wisata!['deskripsi'] ?? '';
+      _fotoController.text = widget.wisata!['foto'] ?? '';
+      _kategoriController.text = widget.wisata!['kategori'] ?? '';
+    }
   }
 
   Future<void> _saveData() async {
     if (_formKey.currentState!.validate()) {
-      final data = {
-        'id': widget.wisata?['id'],
-        'nama': namaController.text,
-        'lokasi': lokasiController.text,
-        'deskripsi': deskripsiController.text,
-        'foto': fotoController.text,
-        'kategori': kategoriController.text,
+      setState(() {
+        _isLoading = true;
+      });
+
+      Map<String, dynamic> data = {
+        'nama': _namaController.text,
+        'lokasi': _lokasiController.text,
+        'deskripsi': _deskripsiController.text,
+        'foto': _fotoController.text, // Pastikan ini dikirim
+        'kategori': _kategoriController.text, // Pastikan ini dikirim
       };
 
       bool success;
+      String message = '';
+
       if (widget.wisata == null) {
-        // Tambah data
-        success = await ApiService().addWisata(data);
+        // Mode tambah data
+        success = await apiService.addWisata(data);
+        message = success ? 'Data wisata berhasil ditambahkan!' : 'Gagal menambahkan data wisata.';
       } else {
-        // Edit data
-        success = await ApiService().editWisata(data);
+        // Mode edit data
+        data['id'] = widget.wisata!['id']; // ID wajib untuk edit
+        success = await apiService.editWisata(data);
+        message = success ? 'Data wisata berhasil diupdate!' : 'Gagal mengupdate data wisata.';
       }
 
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+
       if (success) {
-        Navigator.pop(context, data);
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan data!')));
+        Navigator.pop(context, true); // Kembali ke Home screen dan refresh
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _lokasiController.dispose();
+    _deskripsiController.dispose();
+    _fotoController.dispose();
+    _kategoriController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.wisata == null ? 'Tambah Wisata' : 'Edit Wisata'),
-        backgroundColor: Colors.green[200],
+        title: Text(widget.wisata == null ? 'Tambah Wisata Baru' : 'Edit Wisata'),
+        backgroundColor: Colors.blueAccent,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: namaController,
-                decoration: InputDecoration(labelText: 'Nama Wisata'),
-                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-              ),
-              TextFormField(
-                controller: lokasiController,
-                decoration: InputDecoration(labelText: 'Lokasi'),
-                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-              ),
-              TextFormField(
-                controller: deskripsiController,
-                decoration: InputDecoration(labelText: 'Deskripsi'),
-                maxLines: 4,
-                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-              ),
-              TextFormField(
-                controller: fotoController,
-                decoration: InputDecoration(labelText: 'URL Foto'),
-              ),
-              TextFormField(
-                controller: kategoriController,
-                decoration: InputDecoration(labelText: 'Kategori'),
-              ),
-              SizedBox(height: 24),
-              ElevatedButton.icon(
-                icon: Icon(Icons.save),
-                label: Text('Simpan'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    TextFormField(
+                      controller: _namaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Wisata',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.place_outlined),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Nama wisata wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _lokasiController,
+                      decoration: const InputDecoration(
+                        labelText: 'Lokasi',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Lokasi wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _deskripsiController,
+                      decoration: const InputDecoration(
+                        labelText: 'Deskripsi',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.description_outlined),
+                      ),
+                      maxLines: 5,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Deskripsi wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _fotoController,
+                      decoration: const InputDecoration(
+                        labelText: 'URL Foto (Opsional)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.image_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _kategoriController,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori (Opsional)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 24.0),
+                    ElevatedButton.icon(
+                      onPressed: _saveData,
+                      icon: const Icon(Icons.save),
+                      label: Text(widget.wisata == null ? 'Simpan Data' : 'Update Data'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        textStyle: const TextStyle(fontSize: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                onPressed: _saveData,
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

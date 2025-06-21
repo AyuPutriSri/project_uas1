@@ -1,132 +1,194 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
-import 'detail_screen.dart';
+import '../services/api_service.dart';
 import 'add_edit_screen.dart';
+import 'detail_screen.dart'; // Pastikan ini diimpor
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  ApiService apiService = ApiService();
+  List<dynamic> _wisataList = [];
+  bool _isLoading = false;
+  String _errorMessage = '';
 
-  // List wisata (dummy data, bisa diganti dengan data dari API)
-  List<Map<String, dynamic>> wisataList = [
-    {
-      'nama': 'Kelingking Beach',
-      'lokasi': 'Kabupaten Klungkung',
-      'deskripsi': 'Pantai indah dengan tebing curam.',
-      'foto': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-      'kategori': 'Pantai',
-      'harga': 'Rp 25.000',
-    },
-    {
-      'nama': 'Gunung Agung',
-      'lokasi': 'Kabupaten Karangasem',
-      'deskripsi': 'Gunung tertinggi di Bali.',
-      'foto': 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-      'kategori': 'Gunung',
-      'harga': 'Rp 0',
-    },
-    {
-      'nama': 'Tirta Gangga',
-      'lokasi': 'Kabupaten Karangasem',
-      'deskripsi': 'Kolam labirin peninggalan kerajaan.',
-      'foto': 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429',
-      'kategori': 'Taman',
-      'harga': 'Rp 20.000',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchWisata();
+  }
 
-  // Widget halaman utama (list wisata)
-  Widget _buildHomePage() {
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: wisataList.length,
-      itemBuilder: (context, index) {
-        final wisata = wisataList[index];
-        return Card(
-          child: ListTile(
-            leading: wisata['foto'] != null && wisata['foto'] != ''
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      wisata['foto'],
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(Icons.image, size: 60),
-                    ),
-                  )
-                : Icon(Icons.image, size: 60),
-            title: Text(
-              wisata['nama'] ?? '',
-              style: TextStyle(fontWeight: FontWeight.bold),
+  Future<void> _fetchWisata() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final data = await apiService.getWisata();
+      setState(() {
+        _wisataList = data;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Gagal memuat data: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _confirmDelete(int id) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Hapus'),
+          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
             ),
-            subtitle: Text(wisata['lokasi'] ?? ''),
-            trailing: Icon(Icons.arrow_forward_ios, color: Colors.green),
-            onTap: () async {
-              // Navigasi ke halaman detail
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(wisata: wisata, isAdmin: true),
-                ),
-              );
-              // Jika data diedit, update list
-              if (result != null && result is Map<String, dynamic>) {
-                setState(() {
-                  wisataList[index] = result;
-                });
-              }
-            },
-          ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );
-  }
 
-  final Widget _profilePage = ProfileScreen();
+    if (confirm == true) {
+      bool success = await apiService.deleteWisata(id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Data berhasil dihapus!' : 'Gagal menghapus data.'),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+      if (success) {
+        _fetchWisata(); // Refresh data setelah hapus
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _selectedIndex == 0 ? _buildHomePage() : _profilePage,
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-              onPressed: () async {
-                // Navigasi ke halaman tambah wisata
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddEditScreen(),
-                  ),
-                );
-                if (result != null && result is Map<String, dynamic>) {
-                  setState(() {
-                    wisataList.add(result);
-                  });
-                }
-              },
-              backgroundColor: Colors.green,
-              child: Icon(Icons.add),
-              tooltip: 'Tambah Wisata',
-            )
-          : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+      appBar: AppBar(
+        title: const Text('Daftar Wisata'),
+        backgroundColor: Colors.blueAccent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchWisata,
+          ),
         ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(
+                  child: Text(
+                    _errorMessage,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
+              : _wisataList.isEmpty
+                  ? const Center(child: Text('Tidak ada data wisata ditemukan.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(8.0),
+                      itemCount: _wisataList.length,
+                      itemBuilder: (context, index) {
+                        final wisata = _wisataList[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailScreen(wisata: wisata),
+                                ),
+                              ).then((_) => _fetchWisata()); // Refresh setelah kembali dari detail
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    wisata['nama'] ?? 'Nama Tidak Diketahui',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8.0),
+                                  Text(
+                                    'Lokasi: ${wisata['lokasi'] ?? 'Tidak Diketahui'}',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                                  ),
+                                  const SizedBox(height: 8.0),
+                                  Text(
+                                    'Kategori: ${wisata['kategori'] ?? 'Tidak Ada'}',
+                                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                  ),
+                                  const SizedBox(height: 12.0),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.orange),
+                                        onPressed: () async {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AddEditScreen(wisata: wisata),
+                                            ),
+                                          );
+                                          if (result == true) {
+                                            _fetchWisata(); // Refresh data setelah edit
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        onPressed: () => _confirmDelete(wisata['id']),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddEditScreen()),
+          );
+          if (result == true) {
+            _fetchWisata(); // Refresh data setelah tambah
+          }
+        },
+        child: const Icon(Icons.add),
+        backgroundColor: Colors.blueAccent,
       ),
     );
   }
