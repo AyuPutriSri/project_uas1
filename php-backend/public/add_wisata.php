@@ -1,4 +1,6 @@
 <?php
+// filepath: php-backend/public/add_wisata.php
+
 // Set header untuk mengizinkan CORS dan JSON response
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
@@ -7,25 +9,27 @@ header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 // Sertakan file database
-include_once '../config/database.php';
+require_once __DIR__ . '/../config/database.php';
 
+// Inisialisasi objek Database dan dapatkan koneksi
 $database = new Database();
-$db = $database->getConnection();
+$db = $database->getConnection(); // <-- Baris ini dan baris di atasnya yang hilang/perlu diperbaiki
 
 // Ambil data POST
-$data = json_decode(file_get_contents("php://input"));
+$data = json_decode(file_get_contents("php://input"), true); // Tambahkan 'true' untuk mendapatkan array asosiatif
 
 // Pastikan data tidak kosong
-if (!empty($data->nama) && !empty($data->lokasi) && !empty($data->deskripsi)) {
-    $nama = $data->nama;
-    $lokasi = $data->lokasi;
-    $deskripsi = $data->deskripsi;
-    $foto = isset($data->foto) ? $data->foto : null; // Foto bisa opsional
-    $kategori = isset($data->kategori) ? $data->kategori : null; // Kategori bisa opsional
+if (!empty($data['nama']) && !empty($data['lokasi']) && !empty($data['deskripsi'])) {
+    $nama = $data['nama'];
+    $lokasi = $data['lokasi'];
+    $deskripsi = $data['deskripsi'];
+    $foto = isset($data['foto']) ? $data['foto'] : null; // Foto bisa opsional
+    $kategori = isset($data['kategori']) ? $data['kategori'] : null; // Kategori bisa opsional
 
     try {
         // Query untuk insert data
         $query = "INSERT INTO wisata (nama, lokasi, deskripsi, foto, kategori) VALUES (:nama, :lokasi, :deskripsi, :foto, :kategori)";
+        // Gunakan $db yang sudah diinisialisasi
         $stmt = $db->prepare($query);
 
         // Bind parameter
@@ -42,9 +46,12 @@ if (!empty($data->nama) && !empty($data->lokasi) && !empty($data->deskripsi)) {
             http_response_code(503); // Service Unavailable
             echo json_encode(array("message" => "Gagal menambahkan data wisata.", "success" => false));
         }
-    } catch (PDOException $e) {
+    } catch (PDOException $e) { // Tangkap PDOException untuk error database
         http_response_code(500); // Internal Server Error
         echo json_encode(array("message" => "Terjadi kesalahan database: " . $e->getMessage(), "success" => false));
+    } catch (Exception $e) { // Tangkap Exception umum lainnya
+        http_response_code(500); // Internal Server Error
+        echo json_encode(array("message" => "Terjadi kesalahan: " . $e->getMessage(), "success" => false));
     }
 } else {
     http_response_code(400); // Bad Request
