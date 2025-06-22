@@ -78,7 +78,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     width: double.infinity,
                     height: 250,
                     color: Colors.grey[300],
-                    child: const Icon(Icons.image, size: 100, color: Colors.grey[600]),
+                    // Hapus 'const' di sini:
+                    child: Icon(Icons.image, size: 100, color: Colors.grey[600]), // <--- UBAH INI
                   ),
                 ),
               )
@@ -87,7 +88,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 width: double.infinity,
                 height: 250,
                 color: Colors.grey[300],
-                child: const Icon(Icons.image, size: 100, color: Colors.grey[600]),
+                // Hapus 'const' di sini:
+                child: Icon(Icons.image, size: 100, color: Colors.grey[600]), // <--- UBAH INI
               ),
             const SizedBox(height: 20),
             Text(
