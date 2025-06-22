@@ -1,3 +1,5 @@
+// filepath: ayu_putri/lib/screens/home_screen.dart
+
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'add_edit_screen.dart';
@@ -20,89 +22,37 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchTerm = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // Dummy data (Ini akan ditimpa oleh data API jika fetch berhasil)
-  List<Map<String, dynamic>> _dummyWisataList = [
-    {
-      'id': 1,
-      'nama': 'Kelingking Beach',
-      'lokasi': 'Kabupaten Klungkung',
-      'deskripsi': 'Pantai indah dengan tebing curam di Nusa Penida.',
-      'foto': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Pantai',
-      'harga': 'Rp 25.000',
-    },
-    {
-      'id': 2,
-      'nama': 'Gunung Agung',
-      'lokasi': 'Kabupaten Karangasem',
-      'deskripsi': 'Gunung tertinggi di Bali, tujuan pendakian populer.',
-      'foto': 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Gunung',
-      'harga': 'Rp 0',
-    },
-    {
-      'id': 3,
-      'nama': 'Tirta Gangga',
-      'lokasi': 'Kabupaten Karangasem',
-      'deskripsi': 'Kolam labirin peninggalan kerajaan yang indah.',
-      'foto': 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Taman',
-      'harga': 'Rp 20.000',
-    },
-    {
-      'id': 4,
-      'nama': 'Desa Penglipuran',
-      'lokasi': 'Desa Penglipuran, Kecamatan Bangli, Kabupaten Bangli',
-      'deskripsi': 'Desa adat yang terkenal akan arsitektur tradisional dan kebersihannya.',
-      'foto': 'https://images.unsplash.com/photo-1549646549-06d20f66e6d7?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Lingkungan/Desa',
-      'harga': 'Rp 30.000',
-    },
-    {
-      'id': 5,
-      'nama': 'Garuda-Wisnu-Kencana (GWK)',
-      'lokasi': 'Ungasan, Kecamatan Kuta Selatan, Kabupaten Badung',
-      'deskripsi': 'Taman budaya dengan patung dewa Wisnu yang menunggangi burung Garuda.',
-      'foto': 'https://images.unsplash.com/photo-1627045749457-3f8d9b2e0c1f?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Budaya',
-      'harga': 'Rp 125.000',
-    },
-    {
-      'id': 6,
-      'nama': 'Diamond Beach',
-      'lokasi': 'Nusa Penida, Kabupaten Klungkung',
-      'deskripsi': 'Pantai tersembunyi yang menawan dengan pasir putih dan formasi batuan karang.',
-      'foto': 'https://images.unsplash.com/photo-1594247547535-30113c2c7c72?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      'kategori': 'Pantai',
-      'harga': 'Rp 10.000',
-    },
-  ];
+  // *** BAGIAN DUMMY DATA INI TELAH DIHAPUS/DIKOMENTARI ***
+  // List<Map<String, dynamic>> _dummyWisataList = [ /* ... */ ];
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi dengan dummy data jika _wisataList kosong,
-    // lalu fetch dari API
-    if (_wisataList.isEmpty) {
-      _wisataList = List.from(_dummyWisataList); // Gunakan dummy untuk tampilan awal
-    }
-    _fetchWisata();
+    // *** BARIS INI JUGA TELAH DIHAPUS/DIKOMENTARI ***
+    // if (_wisataList.isEmpty) {
+    //   _wisataList = List.from(_dummyWisataList);
+    // }
+    _fetchWisata(); // Hanya fetch data dari API
   }
 
   Future<void> _fetchWisata() async {
+    print('DEBUG: _fetchWisata() called.'); // Debug print
     setState(() {
       _isLoading = true;
       _errorMessage = '';
+      _wisataList = []; // <--- TAMBAHKAN INI UNTUK MEMASTIKAN LIST DIKOSONGKAN SEBELUM FETCH
     });
     try {
       final data = await apiService.getWisata();
       setState(() {
-        _wisataList = data; // Timpa dummy dengan data asli dari API
+        _wisataList = data; // Timpa dengan data asli dari API
+        print('DEBUG: Data fetched. List size: ${_wisataList.length}'); // Debug print
       });
     } catch (e) {
+      print('DEBUG ERROR: Failed to fetch data: $e'); // Debug print
       setState(() {
         _errorMessage = 'Gagal memuat data: ${e.toString()}';
-        // Biarkan dummy data tetap ada jika terjadi error fetch untuk tampilan
+        // Tidak ada dummy data sebagai fallback lagi, hanya pesan error
       });
     } finally {
       setState(() {
@@ -141,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
       if (success) {
+        print('DEBUG: Data successfully deleted from backend. Fetching new data...'); // Debug print
         _fetchWisata(); // Memuat ulang data dari API setelah berhasil hapus
       }
     }
@@ -207,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   );
                                   if (result == true) { // JIKA HASILNYA TRUE (BERARTI ADA PERUBAHAN/HAPUS)
+                                    print('DEBUG: Returned from DetailScreen with true. Fetching new data...'); // Debug print
                                     _fetchWisata(); // MUAT ULANG DATA
                                   }
                                 },
