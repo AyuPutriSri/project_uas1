@@ -49,6 +49,33 @@ class _HomeScreenState extends State<HomeScreen> {
       'kategori': 'Taman',
       'harga': 'Rp 20.000',
     },
+    {
+      'id': 4,
+      'nama': 'Desa Penglipuran',
+      'lokasi': 'Desa Penglipuran, Kecamatan Bangli, Kabupaten Bangli',
+      'deskripsi': 'Desa adat yang terkenal akan arsitektur tradisional dan kebersihannya.',
+      'foto': 'https://images.unsplash.com/photo-1549646549-06d20f66e6d7?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      'kategori': 'Lingkungan/Desa',
+      'harga': 'Rp 30.000',
+    },
+    {
+      'id': 5,
+      'nama': 'Garuda-Wisnu-Kencana (GWK)',
+      'lokasi': 'Ungasan, Kecamatan Kuta Selatan, Kabupaten Badung',
+      'deskripsi': 'Taman budaya dengan patung dewa Wisnu yang menunggangi burung Garuda.',
+      'foto': 'https://images.unsplash.com/photo-1627045749457-3f8d9b2e0c1f?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      'kategori': 'Budaya',
+      'harga': 'Rp 125.000',
+    },
+    {
+      'id': 6,
+      'nama': 'Diamond Beach',
+      'lokasi': 'Nusa Penida, Kabupaten Klungkung',
+      'deskripsi': 'Pantai tersembunyi yang menawan dengan pasir putih dan formasi batuan karang.',
+      'foto': 'https://images.unsplash.com/photo-1594247547535-30113c2c7c72?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      'kategori': 'Pantai',
+      'harga': 'Rp 10.000',
+    },
   ];
 
   @override
@@ -172,17 +199,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10.0),
                               ),
                               child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async { // UBAH MENJADI ASYNC DAN GUNAKAN AWAIT
+                                  final result = await Navigator.push( // TANGKAP HASIL POP
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => DetailScreen(wisata: wisata, isAdmin: true),
                                     ),
-                                  ).then((result) { // Gunakan then untuk menangani hasil pop
-                                    if (result == true) { // Jika kembali dengan true (berhasil hapus/edit)
-                                      _fetchWisata(); // Muat ulang data
-                                    }
-                                  });
+                                  );
+                                  if (result == true) { // JIKA HASILNYA TRUE (BERARTI ADA PERUBAHAN/HAPUS)
+                                    _fetchWisata(); // MUAT ULANG DATA
+                                  }
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
